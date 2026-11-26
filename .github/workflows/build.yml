@@ -56,13 +56,18 @@ jobs:
 
       - name: Download ExifTool (Windows build)
         run: |
-          VER=$(curl -fsSL https://exiftool.org/ver.txt | tr -d '\r\n')
+          VER=13.59
+          EXPECTED=44b512b25af500724ba579d0a53c8fc5851628b692dd5e5d94ae4a15c2cba9ec
           echo "EXIFTOOL_VERSION=$VER" >> "$GITHUB_ENV"
-          curl -fsSLO "https://exiftool.org/exiftool-${VER}_64.zip"
-          unzip -q "exiftool-${VER}_64.zip" -d build/exiftool-dl
+          curl -fsSL -o exiftool.zip "https://sourceforge.net/projects/exiftool/files/exiftool-${VER}_64.zip/download"
+          echo "${EXPECTED}  exiftool.zip" | sha256sum -c -
+          unzip -q exiftool.zip -d build/exiftool-dl
+          find build/exiftool-dl -maxdepth 2 | head -20
+          EXE=$(find build/exiftool-dl -iname 'exiftool(-k).exe' | head -n1)
+          DIR=$(dirname "$EXE")
           mkdir -p build/exiftool
-          mv "build/exiftool-dl/exiftool-${VER}_64/exiftool(-k).exe" build/exiftool/exiftool.exe
-          mv "build/exiftool-dl/exiftool-${VER}_64/exiftool_files" build/exiftool/exiftool_files
+          cp "$EXE" build/exiftool/exiftool.exe
+          cp -r "$DIR/exiftool_files" build/exiftool/exiftool_files
 
       - name: Assemble portable bundle
         run: |
