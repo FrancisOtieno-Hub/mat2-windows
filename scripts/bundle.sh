@@ -42,22 +42,48 @@ python - "$OUT/app/libmat2" <<'PY'
 import sys, pathlib
 root = pathlib.Path(sys.argv[1])
 
-def patch(fname, old, new):
+def patch(fname, old, new, count=1):
     f = root / fname
     s = f.read_text(encoding="utf-8")
-    if old not in s:
-        sys.exit(f"PATCH FAILED: expected text not found in {fname}: {old!r}")
+    if s.count(old) != count:
+        sys.exit(f"PATCH FAILED: expected {count} match(es) in {fname}, found {s.count(old)}: {old!r}")
     f.write_text(s.replace(old, new), encoding="utf-8")
     print(f"patched {fname}")
 
+# 1. PDFs: hand-built file:// URIs are invalid for Windows paths (C:\...).
 patch("pdf.py",
       "self.uri = 'file://' + GLib.Uri.escape_string(os.path.abspath(self.filename), '/', True)",
       "self.uri = GLib.filename_to_uri(os.path.abspath(self.filename), None)")
+patch("pdf.py",
+      "Poppler.Document.new_from_file('file://' + GLib.Uri.escape_string(in_file, '/', True))",
+      "Poppler.Document.new_from_file(GLib.filename_to_uri(os.path.abspath(in_file), None))")
+patch("pdf.py",
+      "document.save('file://' + GLib.Uri.escape_string(os.path.abspath(out_file), '/', True))",
+      "document.save(GLib.filename_to_uri(os.path.abspath(out_file), None))")
 
+# 2. Office files: Word on Windows stores thumbnail.emf (mat2 only knew .wmf).
 patch("office.py",
       "r'^docProps/thumbnail.wmf$',",
       "r'^docProps/thumbnail\\.(?:wmf|emf)$',")
+
+# 3. Archives (docx, odt, zip...): Windows can't delete read-only temp files.
+HELPER = (
+    "def _rmtree_force(path):\n"
+    "    \"\"\" rmtree that also deletes read-only files (needed on Windows). \"\"\"\n"
+    "    def _fix(func, p, _exc):\n"
+    "        os.chmod(p, stat.S_IWRITE)\n"
+    "        func(p)\n"
+    "    try:\n"
+    "        shutil.rmtree(path, onexc=_fix)\n"
+    "    except TypeError:  # Python < 3.12\n"
+    "        shutil.rmtree(path, onerror=_fix)\n"
+    "\n\n"
+)
+CLS = "class ArchiveBasedAbstractParser(abstract.AbstractParser):"
+patch("archive.py", CLS, HELPER + CLS)
+patch("archive.py", "shutil.rmtree(temp_folder)", "_rmtree_force(temp_folder)", count=2)
 PY
+
 cp "$MAT2/LICENSE" "$OUT/LICENSE-mat2.txt"
 
 echo "== ExifTool"
