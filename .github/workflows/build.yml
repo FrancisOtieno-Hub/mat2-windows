@@ -4,8 +4,8 @@ on:
   workflow_dispatch:
     inputs:
       mat2_ref:
-        description: "mat2 tag or branch to build (pin a release tag for real releases)"
-        default: "main"
+        description: "mat2 commit, tag or branch to build (default: a pinned commit that includes Office-file fixes missing from release 0.15.0)"
+        default: "5098533876135a7547b7a922ff408d749c29455e"
   push:
     tags: ["v*"]
 
@@ -19,7 +19,7 @@ jobs:
       run:
         shell: msys2 {0}
     env:
-      MAT2_REF: ${{ inputs.mat2_ref || 'main' }}
+      MAT2_REF: ${{ inputs.mat2_ref || '5098533876135a7547b7a922ff408d749c29455e' }}
     steps:
       - uses: actions/checkout@v4
 
@@ -44,7 +44,7 @@ jobs:
           git clone https://github.com/jvoisin/mat2.git mat2-src
           cd mat2-src && git checkout "$MAT2_REF"
           echo "MAT2_COMMIT=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
-          echo "MAT2_VERSION=$(grep -m1 '^version' pyproject.toml | cut -d'"' -f2)" >> "$GITHUB_ENV"
+          echo "MAT2_VERSION=$(grep -m1 '^version' pyproject.toml | cut -d'"' -f2)-$(git rev-parse --short HEAD)" >> "$GITHUB_ENV"
 
       - name: Install mutagen (pure Python)
         run: python -m pip install --break-system-packages --target build/pysite mutagen
