@@ -5,7 +5,7 @@ on:
     inputs:
       mat2_ref:
         description: "mat2 tag or branch to build (pin a release tag for real releases)"
-        default: "master"
+        default: "main"
   push:
     tags: ["v*"]
 
@@ -19,7 +19,7 @@ jobs:
       run:
         shell: msys2 {0}
     env:
-      MAT2_REF: ${{ inputs.mat2_ref || 'master' }}
+      MAT2_REF: ${{ inputs.mat2_ref || 'main' }}
     steps:
       - uses: actions/checkout@v4
 
