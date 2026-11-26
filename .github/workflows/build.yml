@@ -1,0 +1,99 @@
+name: Build mat2 for Windows
+
+on:
+  workflow_dispatch:
+    inputs:
+      mat2_ref:
+        description: "mat2 tag or branch to build (pin a release tag for real releases)"
+        default: "master"
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: msys2 {0}
+    env:
+      MAT2_REF: ${{ inputs.mat2_ref || 'master' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: msys2/setup-msys2@v2
+        with:
+          msystem: MINGW64
+          update: true
+          install: >-
+            git zip unzip curl
+            mingw-w64-x86_64-python
+            mingw-w64-x86_64-python-pip
+            mingw-w64-x86_64-python-gobject
+            mingw-w64-x86_64-python-cairo
+            mingw-w64-x86_64-gdk-pixbuf2
+            mingw-w64-x86_64-librsvg
+            mingw-w64-x86_64-poppler
+            mingw-w64-x86_64-poppler-data
+            mingw-w64-x86_64-fontconfig
+
+      - name: Get mat2 source
+        run: |
+          git clone https://github.com/jvoisin/mat2.git mat2-src
+          cd mat2-src && git checkout "$MAT2_REF"
+          echo "MAT2_COMMIT=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
+          echo "MAT2_VERSION=$(grep -m1 '^version' pyproject.toml | cut -d'"' -f2)" >> "$GITHUB_ENV"
+
+      - name: Install mutagen (pure Python)
+        run: python -m pip install --break-system-packages --target build/pysite mutagen
+
+      - name: Sanity check mat2 inside MSYS2 (before bundling)
+        run: |
+          cd mat2-src
+          python mat2 --check-dependencies || true
+
+      - name: Download ExifTool (Windows build)
+        run: |
+          VER=$(curl -fsSL https://exiftool.org/ver.txt | tr -d '\r\n')
+          echo "EXIFTOOL_VERSION=$VER" >> "$GITHUB_ENV"
+          curl -fsSLO "https://exiftool.org/exiftool-${VER}_64.zip"
+          unzip -q "exiftool-${VER}_64.zip" -d build/exiftool-dl
+          mkdir -p build/exiftool
+          mv "build/exiftool-dl/exiftool-${VER}_64/exiftool(-k).exe" build/exiftool/exiftool.exe
+          mv "build/exiftool-dl/exiftool-${VER}_64/exiftool_files" build/exiftool/exiftool_files
+
+      - name: Assemble portable bundle
+        run: |
+          bash scripts/bundle.sh dist/mat2-windows mat2-src build/pysite build/exiftool
+          cp launcher/*.cmd dist/mat2-windows/
+          cp README.md dist/mat2-windows/README.md
+          mkdir -p dist/mat2-windows/THIRD-PARTY
+          pacman -Q | grep -i mingw-w64 > dist/mat2-windows/THIRD-PARTY/packages.txt
+          cp SOURCES.md dist/mat2-windows/THIRD-PARTY/SOURCES.md
+          echo "mat2 commit: $MAT2_COMMIT" > dist/mat2-windows/THIRD-PARTY/BUILD-INFO.txt
+          echo "ExifTool version: $EXIFTOOL_VERSION" >> dist/mat2-windows/THIRD-PARTY/BUILD-INFO.txt
+
+      - name: Smoke test the bundle (plain Windows cmd, no MSYS2 on PATH)
+        shell: cmd
+        run: |
+          dist\mat2-windows\mat2.cmd --check-dependencies
+          dist\mat2-windows\mat2.cmd --version
+
+      - name: Zip and checksum
+        run: |
+          cd dist
+          zip -qr "mat2-windows-${MAT2_VERSION}.zip" mat2-windows
+          sha256sum "mat2-windows-${MAT2_VERSION}.zip" > "mat2-windows-${MAT2_VERSION}.zip.sha256"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mat2-windows
+          path: dist/mat2-windows-*.zip*
+
+      - name: Publish release (tag pushes only)
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/mat2-windows-*.zip*
