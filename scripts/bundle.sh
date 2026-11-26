@@ -122,6 +122,14 @@ PDF_HELPER = (
 PCLS = "class PDFParser(abstract.AbstractParser):"
 patch("pdf.py", PCLS, PDF_HELPER + PCLS)
 patch("pdf.py", "os.remove(tmp_path)", "_remove_temp(tmp_path)", count=2)
+
+# 6. os.rename() refuses to overwrite an existing file on Windows (it does on
+#    Linux). mat2 uses it to put cleaned images back inside docx/xlsx/pptx
+#    files, so those crashed. os.replace() overwrites on every platform.
+patch("archive.py", "os.rename(member_parser.output_filename, full_path)",
+      "os.replace(member_parser.output_filename, full_path)")
+patch("../mat2.py", "os.rename(p.output_filename, filename)",
+      "os.replace(p.output_filename, filename)")
 PY
 cp "$MAT2/LICENSE" "$OUT/LICENSE-mat2.txt"
 
