@@ -37,6 +37,27 @@ if [ -d "$PREFIX/share/poppler" ]; then cp -r "$PREFIX/share/poppler" "$OUT/shar
 echo "== mat2 itself"
 cp -r "$MAT2/libmat2" "$OUT/app/"
 cp "$MAT2/mat2" "$OUT/app/mat2.py"
+echo "== Windows fixes for mat2 (each fails the build loudly if upstream code changed)"
+python - "$OUT/app/libmat2" <<'PY'
+import sys, pathlib
+root = pathlib.Path(sys.argv[1])
+
+def patch(fname, old, new):
+    f = root / fname
+    s = f.read_text(encoding="utf-8")
+    if old not in s:
+        sys.exit(f"PATCH FAILED: expected text not found in {fname}: {old!r}")
+    f.write_text(s.replace(old, new), encoding="utf-8")
+    print(f"patched {fname}")
+
+patch("pdf.py",
+      "self.uri = 'file://' + GLib.Uri.escape_string(os.path.abspath(self.filename), '/', True)",
+      "self.uri = GLib.filename_to_uri(os.path.abspath(self.filename), None)")
+
+patch("office.py",
+      "r'^docProps/thumbnail.wmf$',",
+      "r'^docProps/thumbnail\\.(?:wmf|emf)$',")
+PY
 cp "$MAT2/LICENSE" "$OUT/LICENSE-mat2.txt"
 
 echo "== ExifTool"
