@@ -119,6 +119,34 @@ def check(path):
             if c > 1:
                 problems.append(f"{n}: shape id {i} used {c} times")
 
+    # --- things Office is strict about that are invisible to the checks above
+    for n in names:
+        if not n.endswith((".xml", ".rels")) or n not in parsed:
+            continue
+        raw = z.read(n)
+        declared = set(re.findall(rb'xmlns:([A-Za-z_][\w.-]*)=', raw))
+        for m in re.finditer(rb'\bRequires="([^"]*)"', raw):
+            for pref in m.group(1).split():
+                if pref not in declared:
+                    problems.append(f'{n}: Requires="{pref.decode()}" but prefix {pref.decode()} is not declared (Office reports a corrupt file)')
+        if b"absPath" in raw:
+            problems.append(f"{n}: contains an absPath element (a full local folder path - privacy leak)")
+        if re.search(rb"[A-Za-z]:[\\/]+Users[\\/]", raw):
+            problems.append(f"{n}: contains a Windows user-folder path (privacy leak)")
+    if "ppt/presentation.xml" in parsed:
+        for el in parsed["ppt/presentation.xml"].iter():
+            if el.tag.endswith("}sldMasterId"):
+                v = el.attrib.get("id", "")
+                if not (v.isdigit() and 2**31 <= int(v) <= 2**32 - 1):
+                    problems.append(f"ppt/presentation.xml: slide master id {v} is outside the range PowerPoint accepts (2147483648 - 4294967295)")
+    for n in names:
+        if re.match(r"^ppt/slideMasters/slideMaster\d+\.xml$", n) and n in parsed:
+            for el in parsed[n].iter():
+                if el.tag.endswith("}sldLayoutId"):
+                    v = el.attrib.get("id", "")
+                    if not (v.isdigit() and 2**31 <= int(v) <= 2**32 - 1):
+                        problems.append(f"{n}: slide layout id {v} is outside the range PowerPoint accepts")
+
     # --- theme requirements
     for n in names:
         if re.match(r"^ppt/(slideMasters/slideMaster|notesMasters/notesMaster|handoutMasters/handoutMaster)\d+\.xml$", n):
