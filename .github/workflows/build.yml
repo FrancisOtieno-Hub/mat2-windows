@@ -73,6 +73,7 @@ jobs:
         run: |
           bash scripts/bundle.sh dist/mat2-windows mat2-src build/pysite build/exiftool
           cp launcher/*.cmd dist/mat2-windows/
+          cp tools/check_office.py dist/mat2-windows/app/check_office.py
           cp README.md dist/mat2-windows/README.md
           mkdir -p dist/mat2-windows/THIRD-PARTY
           pacman -Q | grep -i mingw-w64 > dist/mat2-windows/THIRD-PARTY/packages.txt
