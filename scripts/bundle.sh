@@ -130,6 +130,17 @@ patch("archive.py", "os.rename(member_parser.output_filename, full_path)",
       "os.replace(member_parser.output_filename, full_path)")
 patch("../mat2.py", "os.rename(p.output_filename, filename)",
       "os.replace(p.output_filename, filename)")
+
+# 7. mat2 deletes the theme parts (theme1.xml). A PowerPoint slide master
+#    REQUIRES a theme and Excel styles refer to theme colours, so cleaned
+#    .pptx/.xlsx files made Office show "found a problem with content".
+#    Keep the theme (and its relationships; theme images are still cleaned).
+patch("office.py", "            r'^(?:word|ppt|xl)/theme',\n", "")
+patch("office.py",
+      "            r'^ppt/handoutMasters/_rels/handoutMaster[0-9]+\\.xml\\.rels',\n",
+      "            r'^ppt/handoutMasters/_rels/handoutMaster[0-9]+\\.xml\\.rels',\n"
+      "            r'^(?:word|ppt|xl)/theme/theme[0-9]+\\.xml$',\n"
+      "            r'^(?:word|ppt|xl)/theme/_rels/theme[0-9]+\\.xml\\.rels$',\n")
 PY
 cp "$MAT2/LICENSE" "$OUT/LICENSE-mat2.txt"
 
