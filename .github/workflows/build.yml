@@ -93,13 +93,39 @@ jobs:
           zip -qr "mat2-windows-${MAT2_VERSION}.zip" mat2-windows
           sha256sum "mat2-windows-${MAT2_VERSION}.zip" > "mat2-windows-${MAT2_VERSION}.zip.sha256"
 
+      - name: Collect corresponding source code (GPL/LGPL compliance)
+        run: |
+          bash scripts/collect_sources.sh dist/mat2-windows dist/sources mat2-src build/pysite "$EXIFTOOL_VERSION"
+          cd dist
+          zip -0 -qr "mat2-windows-${MAT2_VERSION}-sources.zip" sources
+          sha256sum "mat2-windows-${MAT2_VERSION}-sources.zip" > "mat2-windows-${MAT2_VERSION}-sources.zip.sha256"
+          rm -rf sources
+
+      - name: Write release notes
+        run: |
+          ZIP="mat2-windows-${MAT2_VERSION}.zip"
+          SRC="mat2-windows-${MAT2_VERSION}-sources.zip"
+          sed -e "s|__ZIP__|$ZIP|g" -e "s|__SOURCES_ZIP__|$SRC|g" \
+              -e "s|__SHA256__|$(cut -d' ' -f1 dist/$ZIP.sha256)|g" \
+              -e "s|__SOURCES_SHA256__|$(cut -d' ' -f1 dist/$SRC.sha256)|g" \
+              -e "s|__MAT2_COMMIT__|$MAT2_COMMIT|g" -e "s|__EXIFTOOL__|$EXIFTOOL_VERSION|g" \
+              RELEASE_TEMPLATE.md > dist/RELEASE_NOTES.md
+
       - uses: actions/upload-artifact@v4
         with:
           name: mat2-windows
-          path: dist/mat2-windows-*.zip*
+          path: |
+            dist/mat2-windows-*.zip
+            dist/mat2-windows-*.zip.sha256
+            dist/RELEASE_NOTES.md
 
       - name: Publish release (tag pushes only)
         if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v2
         with:
-          files: dist/mat2-windows-*.zip*
+          name: mat2 for Windows ${{ github.ref_name }} (unofficial build)
+          body_path: dist/RELEASE_NOTES.md
+          prerelease: ${{ contains(github.ref_name, '-') }}
+          files: |
+            dist/mat2-windows-*.zip
+            dist/mat2-windows-*.zip.sha256
