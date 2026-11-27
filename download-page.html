@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>mat2 for Windows – remove hidden metadata from your files</title>
+<meta name="description" content="Free, portable Windows build of mat2. Removes location, author names, camera details and edit history from photos, PDFs and Office files.">
+<!--
+  BEFORE YOU PUBLISH: open this file in Notepad, use Find & Replace ("Replace All") for these 5 tokens:
+
+    {{VERSION}}      e.g. 0.15.0-5098533   (the part of the zip name between "mat2-windows-" and ".zip")
+    {{SHA256}}       the SHA-256 shown on your GitHub release page for the program zip
+    {{SOURCES_SHA256}} the SHA-256 shown for the "-sources.zip" file
+    {{TAG}}          your release tag, e.g. v1.0.0-beta.1
+    {{GITHUB_USER}}  your GitHub username
+
+  Put the three files on your site under /downloads/ (or change the links below):
+    mat2-windows-{{VERSION}}.zip   mat2-windows-{{VERSION}}.zip.sha256   mat2-windows-{{VERSION}}-sources.zip
+-->
+<style>
+  :root {
+    --bg: #f7f7f5; --card: #ffffff; --text: #1d1f23; --muted: #5d6470;
+    --line: #e2e3e0; --accent: #0b6b57; --accent-text: #ffffff; --code: #eef0ee; --warn: #fff6e0; --warn-line: #f0d9a0;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #15171a; --card: #1e2125; --text: #ecedee; --muted: #a3a9b3;
+      --line: #32363c; --accent: #3fbf9f; --accent-text: #0c1411; --code: #272b31; --warn: #2a2415; --warn-line: #5a4a1d;
+    }
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body { margin: 0; background: var(--bg); color: var(--text);
+    font: 17px/1.6 system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
+  main { max-width: 760px; margin: 0 auto; padding: 32px 20px 64px; }
+  h1 { font-size: clamp(1.8rem, 5vw, 2.4rem); line-height: 1.15; margin: 8px 0 12px; }
+  h2 { font-size: 1.25rem; margin: 40px 0 10px; }
+  p { margin: 0 0 14px; }
+  a { color: var(--accent); }
+  .badge { display: inline-block; font-size: .8rem; font-weight: 600; letter-spacing: .02em;
+    padding: 3px 10px; border-radius: 999px; background: var(--warn); border: 1px solid var(--warn-line); }
+  .lead { font-size: 1.1rem; color: var(--muted); max-width: 60ch; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 22px; margin: 22px 0; }
+  .btns { display: flex; flex-wrap: wrap; gap: 12px; margin: 14px 0 6px; }
+  .btn { display: inline-block; padding: 12px 20px; border-radius: 10px; font-weight: 600; text-decoration: none;
+    border: 1px solid var(--accent); }
+  .btn.primary { background: var(--accent); color: var(--accent-text); }
+  .btn.secondary { color: var(--accent); background: transparent; }
+  .meta { color: var(--muted); font-size: .92rem; margin: 6px 0 0; }
+  code, pre { font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace; font-size: .88rem; }
+  code { background: var(--code); padding: 1px 6px; border-radius: 5px; word-break: break-all; }
+  .scroll { overflow-x: auto; }
+  pre { background: var(--code); padding: 12px 14px; border-radius: 10px; margin: 8px 0 14px; overflow-x: auto; }
+  ol.steps { padding-left: 1.3rem; } ol.steps li { margin-bottom: 8px; }
+  table { border-collapse: collapse; width: 100%; font-size: .96rem; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { color: var(--muted); font-weight: 600; font-size: .85rem; text-transform: uppercase; letter-spacing: .04em; }
+  .ok { color: var(--accent); font-weight: 600; }
+  .note { background: var(--warn); border: 1px solid var(--warn-line); border-radius: 10px; padding: 12px 14px; font-size: .95rem; }
+  footer { margin-top: 48px; color: var(--muted); font-size: .9rem; border-top: 1px solid var(--line); padding-top: 18px; }
+</style>
+</head>
+<body>
+<main>
+
+  <span class="badge">Unofficial build · experimental</span>
+  <h1>mat2 for Windows</h1>
+  <p class="lead">Photos, PDFs and Office files quietly carry hidden details: where a picture was taken, who wrote a document, which device made it. This free tool removes them before you share a file.</p>
+
+  <section class="card" id="download" aria-labelledby="dl-h">
+    <h2 id="dl-h" style="margin-top:0">Download</h2>
+    <p>Portable: unzip it and run it. No installation and no administrator rights needed. For Windows 10 and 11.</p>
+    <div class="btns">
+      <a class="btn primary" href="/downloads/mat2-windows-{{VERSION}}.zip" download>Download for Windows (.zip)</a>
+      <a class="btn secondary" href="https://github.com/{{GITHUB_USER}}/mat2-windows/releases/tag/{{TAG}}">Mirror on GitHub</a>
+    </div>
+    <p class="meta">Version {{VERSION}} · free · <a href="/downloads/mat2-windows-{{VERSION}}.zip.sha256">checksum file</a></p>
+    <p class="meta">SHA-256: <code>{{SHA256}}</code></p>
+  </section>
+
+  <h2>How to use it</h2>
+  <ol class="steps">
+    <li>Right-click the zip, choose <strong>Extract All</strong>, and open the new folder.</li>
+    <li><strong>Drag your files onto <code>Clean-files-with-mat2.cmd</code>.</strong></li>
+    <li>A cleaned copy appears next to each original, named <code>NAME.cleaned.EXT</code>. Your originals are never changed.</li>
+  </ol>
+  <p>To see what a file contains before and after, open PowerShell in the folder and run <code>.\mat2.cmd --show "C:\path\to\file.jpg"</code>.</p>
+
+  <h2>What has been tested</h2>
+  <div class="scroll">
+  <table>
+    <thead><tr><th>File type</th><th>Status on Windows</th></tr></thead>
+    <tbody>
+      <tr><td>Photos (JPG)</td><td class="ok">Tested ✓</td></tr>
+      <tr><td>Word (DOCX)</td><td class="ok">Tested ✓</td></tr>
+      <tr><td>PDF</td><td class="ok">Tested ✓</td></tr>
+      <tr><td>Excel (XLSX)</td><td class="ok">Tested ✓</td></tr>
+      <tr><td>PowerPoint (PPTX)</td><td class="ok">Tested ✓</td></tr>
+      <tr><td>EPUB, ODT/ODS/ODP, ZIP, audio, PNG/GIF/TIFF/WebP, HTML/SVG</td><td>Not tested yet</td></tr>
+      <tr><td>Video</td><td>Not supported</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p class="note" style="margin-top:16px"><strong>Please check before you share.</strong> This is an experimental build. After cleaning, run <code>.\mat2.cmd --show</code> on the cleaned file to confirm the details are gone. Some files, such as PDFs, may look slightly different after cleaning; that is how metadata removal works.</p>
+
+  <h2>Verify your download</h2>
+  <p>To check that the file wasn’t changed on its way to you, run this in PowerShell and compare the result with the SHA-256 above:</p>
+  <pre>Get-FileHash .\mat2-windows-{{VERSION}}.zip -Algorithm SHA256</pre>
+  <p>Windows may show a SmartScreen warning because the program isn’t code-signed. After checking the SHA-256, click <strong>More info</strong>, then <strong>Run anyway</strong>.</p>
+
+  <h2 id="source">License and source code</h2>
+  <p>mat2 is free software (LGPL-3.0-or-later) written by the <a href="https://github.com/jvoisin/mat2">mat2 project</a>. This is an <strong>unofficial</strong> Windows build and is not made or endorsed by that project. The download also includes other open-source components (Python, GLib, GdkPixbuf, librsvg, cairo, Poppler, mutagen, ExifTool and more) under their own licenses; the license texts are in the <code>THIRD-PARTY</code> folder inside the zip.</p>
+  <div class="card">
+    <p style="margin-bottom:8px"><strong>Source code for everything in the download:</strong></p>
+    <p class="meta" style="margin:0 0 10px">The complete corresponding source of every component, as required by the GPL and LGPL licenses, plus the exact recipe that built the download:</p>
+    <div class="btns" style="margin-top:0">
+      <a class="btn secondary" href="/downloads/mat2-windows-{{VERSION}}-sources.zip" download>Download the source (.zip)</a>
+      <a class="btn secondary" href="https://github.com/{{GITHUB_USER}}/mat2-windows/releases/tag/{{TAG}}">Same files on GitHub</a>
+    </div>
+    <p class="meta">Source SHA-256: <code>{{SOURCES_SHA256}}</code> · Build recipe: <a href="https://github.com/{{GITHUB_USER}}/mat2-windows">github.com/{{GITHUB_USER}}/mat2-windows</a> · Original project: <a href="https://github.com/jvoisin/mat2">github.com/jvoisin/mat2</a></p>
+  </div>
+
+  <footer>
+    <p>mat2 for Windows is an unofficial build, provided without warranty. All credit for the tool goes to the mat2 project and its contributors. Found a problem with this Windows build? <a href="https://github.com/{{GITHUB_USER}}/mat2-windows/issues">Report it here</a>.</p>
+  </footer>
+</main>
+</body>
+</html>

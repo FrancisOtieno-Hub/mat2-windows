@@ -22,23 +22,30 @@ possible (for example, text in a cleaned PDF may no longer be selectable). Use
 `--lightweight` (`-L`) to remove only some metadata and leave file content intact.
 Video support needs FFmpeg, which is not included in this build.
 
+## Tested file types
+
+Cleaning and re-checking worked on Windows for: **JPG, DOCX, PDF, XLSX, PPTX.**
+Other formats supported by mat2 (EPUB, ODT/ODS/ODP, ZIP, audio, PNG/GIF/TIFF/WebP,
+HTML/SVG, text) have not been tested yet. Video is not supported (FFmpeg is not
+included). Always check a cleaned file with `mat2.cmd --show FILE` before sharing it.
+
 ## Verify your download
 
-Compare the SHA-256 of the zip with the `.sha256` file published next to it.
-The zip is built by the public GitHub Actions workflow in this repository from
-upstream mat2 source, so you can inspect exactly how it was made.
-
-Windows may show a SmartScreen warning because the files are not code-signed.
+Compare the SHA-256 of the zip with the value on the download page or release page
+(`Get-FileHash .\FILE.zip -Algorithm SHA256` in PowerShell). The zip is built by the
+public GitHub Actions workflow in this repository from upstream mat2 source, so
+you can inspect exactly how it was made. Windows may show a SmartScreen warning
+because the files are not code-signed.
 
 ## License and source
 
 - mat2 is licensed under the **GNU LGPL v3 or later** (see `LICENSE-mat2.txt`).
   Upstream source: https://github.com/jvoisin/mat2
 - The bundle also contains other open-source components (Python, GLib, GTK
-  libraries, Poppler, librsvg, ExifTool and more) under their own licenses.
-  See the `THIRD-PARTY` folder for license texts, exact package versions and
-  where to get the corresponding source. The build scripts in this repository
-  are the exact recipe used.
+  libraries, Poppler, mutagen, ExifTool and more) under their own licenses.
+  See the `THIRD-PARTY` folder for license texts and exact versions.
+- **Complete corresponding source code** is published with every release as
+  `mat2-windows-<version>-sources.zip`. See `THIRD-PARTY/SOURCES.md`.
 
 ## Building it yourself
 

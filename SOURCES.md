@@ -1,30 +1,42 @@
 # Corresponding source and licenses
 
-This Windows bundle combines several open-source programs. This file explains
-where the source code for each part can be obtained.
+This Windows bundle combines several open-source programs, each under its own
+license. This file explains where the complete corresponding source code is.
 
-| Component | License (summary) | Source |
+## Where to get the source
+
+Every release is published together with a file named
+`mat2-windows-<version>-sources.zip`. It is on the same release page and the
+same website page as the program download, and stays available for as long as the
+program is offered. It contains:
+
+- `msys2/`: the source package of **every MSYS2 package whose files are in the
+  download** (Python, GLib, GdkPixbuf, librsvg, cairo, Poppler, fontconfig, the
+  GCC runtime libraries and more). Each one holds the packaging recipe, the
+  upstream source and any patches. The exact list is in `PACKAGES-SHIPPED.txt`.
+- `other/`: mat2 (the exact commit that was built), mutagen, ExifTool, and the
+  build recipe (`mat2-windows-recipe.tar.gz`: the workflow and scripts that
+  assemble the download, including the small Windows fixes applied to mat2).
+
+The release build fails if the source of any shipped package cannot be
+collected, so a release is never published without its source.
+
+## Components
+
+| Component | License (summary) | Upstream |
 |---|---|---|
-| mat2 | LGPL-3.0-or-later | https://github.com/jvoisin/mat2 (exact commit in `BUILD-INFO.txt`) |
-| Python, GLib/GObject, GdkPixbuf, librsvg, cairo, fontconfig, PyGObject, PyCairo | Mostly LGPL / MIT / PSF | MSYS2 package recipes: https://github.com/msys2/MINGW-packages (exact versions in `packages.txt`) |
-| Poppler (and poppler-data) | GPL-2.0 / GPL-3.0 | MSYS2 package recipe above; upstream https://poppler.freedesktop.org/ |
+| mat2 | LGPL-3.0-or-later | https://github.com/jvoisin/mat2 |
+| Python, GLib/GObject, GdkPixbuf, librsvg, cairo, fontconfig, PyGObject, PyCairo | mostly LGPL / MIT / PSF | via MSYS2 packages |
+| Poppler (and poppler-data) | GPL-2.0 / GPL-3.0 | https://poppler.freedesktop.org/ |
+| GCC runtime libraries | GPL-3.0 with the GCC Runtime Library Exception | https://gcc.gnu.org/ |
 | mutagen | GPL-2.0-or-later | https://github.com/quodlibet/mutagen |
 | ExifTool | Perl Artistic License or GPL | https://exiftool.org/ |
 
-Full license texts for the MSYS2 packages are in `THIRD-PARTY/licenses`.
+Full license texts for the MSYS2 packages are in `THIRD-PARTY/licenses`. The
+exact package versions are in `THIRD-PARTY/packages.txt`, and the mat2 commit
+and ExifTool version are in `THIRD-PARTY/BUILD-INFO.txt`.
 
-The build scripts that produced this bundle (workflow, `scripts/bundle.sh` and
-the launchers) are published in the same repository as this release.
+## Questions
 
-If you received this bundle and want the source of any component listed above
-and cannot find it using these links, open an issue in this repository and it
-will be provided.
-
----
-**Maintainer checklist before publishing (delete before release):**
-- This bundle includes GPL components (Poppler, mutagen). Confirm with a
-  qualified person that the way you offer source (links above, or hosting
-  copies of the source archives next to the download) satisfies those licenses.
-  Hosting the source archives on your own site next to the zip is the safest
-  option.
-- Check each component's license text in `THIRD-PARTY/licenses` matches this table.
+If you cannot find the source of any component, open an issue in the repository
+this download came from and it will be provided.
