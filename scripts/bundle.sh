@@ -141,6 +141,64 @@ patch("office.py",
       "            r'^ppt/handoutMasters/_rels/handoutMaster[0-9]+\\.xml\\.rels',\n"
       "            r'^(?:word|ppt|xl)/theme/theme[0-9]+\\.xml$',\n"
       "            r'^(?:word|ppt|xl)/theme/_rels/theme[0-9]+\\.xml\\.rels$',\n")
+
+# 8. PowerPoint: mat2 sets every slide-master id to random(0 .. 2**32), but
+#    PowerPoint only accepts ids from 2**31 to 2**32-1. Half of the random
+#    values are invalid and PowerPoint answers "found a problem with content".
+patch("office.py", "item.set('id', '%s' % random.randint(0, 2**32))",
+      "item.set('id', '%s' % random.randint(2**31, 2**32 - 1))")
+patch("office.py", "item.set('val', '%s' % random.randint(0, 2**32))",
+      "item.set('val', '%s' % random.randint(0, 2**32 - 1))")
+#    The replacement tableStyles.xml pointed at a random, undefined style id.
+#    Use PowerPoint's own built-in default table style id instead.
+patch("office.py", "uid = str(uuid.uuid4()).encode('utf-8')",
+      "uid = b'5C22544A-7EE6-4342-B048-85BDC9FD1C3A'")
+
+# 9. Excel: workbook.xml has <mc:Choice Requires="x15">. ElementTree drops the
+#    unused xmlns:x15 declaration, leaving Requires="x15" pointing at nothing,
+#    and Excel says "found a problem with some content". The same block also
+#    holds x15ac:absPath, the full local folder path of the file (a privacy
+#    leak that mat2 leaves in place). Remove that block, and re-declare any
+#    prefix that is still named in a Requires="..." attribute.
+HELPERS = r'''def _read_ns_decls(path):
+    """ prefix -> uri declarations found in the raw text of an XML file """
+    try:
+        with open(path, 'rb') as f:
+            raw = f.read()
+    except OSError:  # pragma: no cover
+        return {}
+    return {k.decode(): v.decode()
+            for k, v in re.findall(rb'xmlns:([A-Za-z_][\w.-]*)="([^"]*)"', raw)}
+
+
+def _fix_office_xml(raw, orig_decls):
+    """ Fixes for XML that ElementTree has just written for Microsoft Office """
+    raw = re.sub(rb'<mc:AlternateContent\b[^>]*>(?:(?!</mc:AlternateContent>).)*?absPath'
+                 rb'(?:(?!</mc:AlternateContent>).)*</mc:AlternateContent>',
+                 b'', raw, flags=re.DOTALL)
+    need = set()
+    for m in re.finditer(rb'\bRequires="([^"]*)"', raw):
+        need.update(m.group(1).decode().split())
+    if need:
+        present = {k.decode() for k in re.findall(rb'xmlns:([A-Za-z_][\w.-]*)=', raw)}
+        missing = [p for p in sorted(need) if p not in present and p in orig_decls]
+        if missing:
+            start = raw.find(b'?>') + 2 if raw.lstrip().startswith(b'<?xml') else 0
+            m = re.compile(rb'<([A-Za-z_][^\s/>]*)').search(raw, start)
+            if m:
+                extra = b''.join(b' xmlns:%s="%s"' % (p.encode(), orig_decls[p].encode())
+                                 for p in missing)
+                raw = raw[:m.end()] + extra + raw[m.end():]
+    return raw
+
+
+'''
+PARSE = "def _parse_xml(full_path: str) -> tuple[ET.ElementTree, dict[str, str]]:"
+patch("office.py", PARSE, HELPERS + PARSE)
+START = "        if self.__randomize_creationId(full_path) is False:\n            return False\n"
+patch("office.py", START, "        _orig_ns = _read_ns_decls(full_path)\n" + START)
+IGN = "            out = re.sub(b'mc:Ignorable=\"[^\"]*\"', b'', text, count=1)\n"
+patch("office.py", IGN, IGN + "            out = _fix_office_xml(out, _orig_ns)\n")
 PY
 cp "$MAT2/LICENSE" "$OUT/LICENSE-mat2.txt"
 
