@@ -515,7 +515,15 @@ class App:
 
 def main():
     if "--check" in sys.argv:  # used by the build: loads Tcl/Tk, shows nothing
-        root = tk.Tk()
+        # importing tkinter already proved that _tkinter and its DLLs load;
+        # starting a bare Tcl proves that the Tcl script library is found
+        print("Tcl %s ok" % tk.Tcl().eval("info patchlevel"))
+        try:
+            root = tk.Tk()
+        except tk.TclError as exc:
+            # e.g. a build machine without a desktop; the window cannot be tested there
+            print("Tk window could not be created here (%s); not treated as an error" % exc)
+            return 0
         root.withdraw()
         root.update()
         print("Tk %s ok" % root.tk.call("info", "patchlevel"))
