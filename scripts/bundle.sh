@@ -17,7 +17,7 @@ mkdir -p "$OUT/bin" "$OUT/lib" "$OUT/etc" "$OUT/share" "$OUT/app"
 echo "== Python $PYVER stdlib"
 tar -C "$PREFIX/lib" -cf - \
   --exclude='__pycache__' --exclude="python$PYVER/test" \
-  --exclude="python$PYVER/idlelib" --exclude="python$PYVER/tkinter" \
+  --exclude="python$PYVER/idlelib" \
   --exclude="python$PYVER/turtledemo" --exclude="python$PYVER/site-packages" \
   "python$PYVER" | tar -C "$OUT/lib" -xf -
 SP="$OUT/lib/python$PYVER/site-packages"
@@ -26,6 +26,21 @@ cp -r "$PREFIX/lib/python$PYVER/site-packages/gi"    "$SP/"
 cp -r "$PREFIX/lib/python$PYVER/site-packages/cairo" "$SP/"
 cp -r "$PYSITE"/* "$SP/"
 find "$OUT" -name '__pycache__' -type d -prune -exec rm -rf {} +
+
+echo "== Tcl/Tk script libraries (for the window; tkinter itself came with the stdlib above)"
+for d in tcl8.6 tk8.6 tcl8; do
+  if [ -d "$PREFIX/lib/$d" ]; then cp -r "$PREFIX/lib/$d" "$OUT/lib/"; fi
+done
+if [ ! -f "$OUT/lib/tcl8.6/init.tcl" ] || [ ! -f "$OUT/lib/tk8.6/tk.tcl" ]; then
+  echo "ERROR: Tcl/Tk script libraries not found under $PREFIX/lib (is mingw-w64-x86_64-tk installed?)"
+  ls "$PREFIX/lib" | grep -i -E '^t(cl|k)' || true
+  exit 1
+fi
+rm -rf "$OUT/lib/tk8.6/demos"
+if ! ls "$OUT"/lib/python$PYVER/lib-dynload/_tkinter* >/dev/null 2>&1; then
+  echo "ERROR: _tkinter extension module missing from the bundled Python"
+  exit 1
+fi
 
 echo "== GObject typelibs, pixbuf loaders, fonts config, poppler data"
 cp -r "$PREFIX/lib/girepository-1.0" "$OUT/lib/"
@@ -207,6 +222,7 @@ cp -r "$EXIF" "$OUT/exiftool"
 
 echo "== DLL closure (everything the above needs from $PREFIX/bin)"
 cp "$PREFIX/bin/python.exe" "$OUT/bin/"
+if [ -f "$PREFIX/bin/pythonw.exe" ]; then cp "$PREFIX/bin/pythonw.exe" "$OUT/bin/"; else echo "note: no pythonw.exe in $PREFIX/bin (window will show a console)"; fi
 cp "$PREFIX"/bin/libpython*.dll "$OUT/bin/"
 cp "$PREFIX/bin/gdk-pixbuf-query-loaders.exe" "$OUT/bin/"
 
