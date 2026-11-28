@@ -175,13 +175,24 @@ def clean_file(src, dest_dir=None, lightweight=False):
 # --------------------------------------------------------------------------
 # file drop on Windows (Tk has no built-in support for dropping files)
 # --------------------------------------------------------------------------
-def enable_file_drop(root, callback):
+def enable_file_drop(root, sink):
     """Let Explorer drop files on the window. Returns True if hooked.
-    Windows only; any failure just returns False (buttons still work)."""
+    Windows only; any failure just returns False (buttons still work).
+
+    The Windows message handler runs while Tk's main loop has Python's lock
+    released, so it must NOT call any Tk function (that aborts Python).
+    It only puts the dropped paths into `sink`, a queue.Queue; the window's
+    timer reads that queue."""
     if os.name != "nt":
         return False
+
+    def dbg(message):  # only prints when started with MAT2_GUI_DEBUG=1 (console mode)
+        if os.environ.get("MAT2_GUI_DEBUG"):
+            print("[drop] " + message, flush=True)
+
     try:
         import ctypes
+        import traceback
         from ctypes import wintypes
         root.update_idletasks()
         user32, shell32 = ctypes.windll.user32, ctypes.windll.shell32
@@ -204,19 +215,22 @@ def enable_file_drop(root, callback):
 
             def proc(h, msg, wparam, lparam):
                 if msg == 0x0233:  # WM_DROPFILES
+                    dbg("WM_DROPFILES arrived on window %s" % hex(h or 0))
                     paths = []
                     try:
                         n = shell32.DragQueryFileW(wparam, 0xFFFFFFFF, None, 0)
+                        dbg("%d item(s) in the drop" % n)
                         for i in range(n):
                             size = shell32.DragQueryFileW(wparam, i, None, 0)
                             buf = ctypes.create_unicode_buffer(size + 1)
                             shell32.DragQueryFileW(wparam, i, buf, size + 1)
                             paths.append(buf.value)
                     except Exception:
-                        pass
+                        dbg(traceback.format_exc())
                     finally:
                         shell32.DragFinish(wparam)
-                    root.after(0, lambda: callback(paths))
+                    dbg("drop read ok, queued %d path(s)" % len(paths))
+                    sink.put(paths)
                     return 0
                 return user32.CallWindowProcW(previous[0], h, msg, wparam, lparam)
 
@@ -227,6 +241,7 @@ def enable_file_drop(root, callback):
             previous[0] = old
             keep.append((callback_ref, previous))
             shell32.DragAcceptFiles(hwnd, True)
+            dbg("hooked window %s" % hex(hwnd))
             return True
 
         hooked = False
@@ -234,7 +249,7 @@ def enable_file_drop(root, callback):
             try:
                 hooked = hook(int(text, 16)) or hooked
             except Exception:
-                pass
+                dbg("hook failed: " + traceback.format_exc())
         root._drop_keepalive = keep  # stop Python from freeing the callbacks
         return hooked
     except Exception:
@@ -259,13 +274,14 @@ class App:
         self.jobs = queue.Queue()
         self.results = queue.Queue()
         self.pending = 0
+        self.drop_queue = queue.Queue()  # filled by the Windows drop handler
         self.light = tk.BooleanVar(value=False)
         self.dest_mode = tk.StringVar(value="next")
         self.dest_dir = tk.StringVar(value="")
         self._build()
         threading.Thread(target=self._worker, daemon=True).start()
         root.after(100, self._poll)
-        self.drop_ok = enable_file_drop(root, self.add_files)
+        self.drop_ok = enable_file_drop(root, self.drop_queue)
         if not self.drop_ok:
             self._say("Drag and drop is not available here. Use \u201cAdd files\u2026\u201d.")
 
@@ -440,6 +456,11 @@ class App:
                 self.results.put(("error", iid, str(exc)))
 
     def _poll(self):
+        try:
+            while True:
+                self.add_files(self.drop_queue.get_nowait())
+        except queue.Empty:
+            pass
         try:
             while True:
                 kind, iid, data = self.results.get_nowait()
