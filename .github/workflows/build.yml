@@ -33,6 +33,7 @@ jobs:
             mingw-w64-x86_64-python-pip
             mingw-w64-x86_64-python-gobject
             mingw-w64-x86_64-python-cairo
+            mingw-w64-x86_64-tk
             mingw-w64-x86_64-gdk-pixbuf2
             mingw-w64-x86_64-librsvg
             mingw-w64-x86_64-poppler
@@ -74,6 +75,7 @@ jobs:
           bash scripts/bundle.sh dist/mat2-windows mat2-src build/pysite build/exiftool
           cp launcher/*.cmd dist/mat2-windows/
           cp tools/check_office.py dist/mat2-windows/app/check_office.py
+          cp gui/mat2_gui.py dist/mat2-windows/app/mat2_gui.py
           cp README.md dist/mat2-windows/README.md
           mkdir -p dist/mat2-windows/THIRD-PARTY
           pacman -Q | grep -i mingw-w64 > dist/mat2-windows/THIRD-PARTY/packages.txt
@@ -86,6 +88,12 @@ jobs:
         run: |
           dist\mat2-windows\mat2.cmd --check-dependencies
           dist\mat2-windows\mat2.cmd --version
+
+      - name: Smoke test the window (loads Tcl/Tk, shows no window)
+        shell: cmd
+        continue-on-error: true  # a runner without a desktop must not block a release
+        run: |
+          dist\mat2-windows\Start-mat2-window.cmd --check
 
       - name: Zip and checksum
         run: |
