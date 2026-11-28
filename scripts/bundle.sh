@@ -233,7 +233,8 @@ while IFS= read -r f; do queue+=("$f"); done < <(
     ls "$PREFIX"/bin/libpoppler-glib*.dll "$PREFIX"/bin/librsvg-2*.dll \
        "$PREFIX"/bin/libgdk_pixbuf-2.0-0.dll "$PREFIX"/bin/libgirepository*.dll \
        "$PREFIX"/bin/libgio-2.0-0.dll "$PREFIX"/bin/libgmodule-2.0-0.dll \
-       "$PREFIX"/bin/libcairo-gobject-2.dll 2>/dev/null || true; } | sort -u)
+       "$PREFIX"/bin/libcairo-gobject-2.dll \
+       "$PREFIX"/bin/tcl8*.dll "$PREFIX"/bin/tk8*.dll 2>/dev/null || true; } | sort -u)
 
 while ((${#queue[@]})); do
   f="${queue[0]}"; queue=("${queue[@]:1}")
@@ -247,6 +248,15 @@ while ((${#queue[@]})); do
     [[ -n "${SEEN[$b]:-}" ]] && continue
     SEEN[$b]=1; cp -n "$dep" "$OUT/bin/"; queue+=("$dep")
   done < <(ldd "$f" 2>/dev/null | awk '{print $3}' | grep -i "^$PREFIX/bin/" || true)
+done
+
+echo "== check: the DLLs that _tkinter needs are in the bundle"
+for dll in tcl86.dll tk86.dll; do
+  if [ ! -f "$OUT/bin/$dll" ]; then
+    echo "ERROR: $dll is missing from $OUT/bin (the window would not start)"
+    ls "$PREFIX/bin" | grep -i -E '^(lib)?t(cl|k)' || true
+    exit 1
+  fi
 done
 
 echo "== licenses of bundled MSYS2 packages"
