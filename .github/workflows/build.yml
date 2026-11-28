@@ -89,9 +89,8 @@ jobs:
           dist\mat2-windows\mat2.cmd --check-dependencies
           dist\mat2-windows\mat2.cmd --version
 
-      - name: Smoke test the window (loads Tcl/Tk, shows no window)
+      - name: Smoke test the window (Tcl/Tk must load; opens no window)
         shell: cmd
-        continue-on-error: true  # a runner without a desktop must not block a release
         run: |
           dist\mat2-windows\Start-mat2-window.cmd --check
 
