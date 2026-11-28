@@ -12,9 +12,14 @@ packaging* in this repository, and problems with mat2 itself upstream.
 ## Using it
 
 1. Unzip the folder anywhere (no installation, no admin rights).
-2. **Drag files onto `Clean-files-with-mat2.cmd`.** A cleaned copy is saved next
-   to each original as `NAME.cleaned.EXT`. Originals are never changed.
-3. Command line: `mat2.cmd --help`, `mat2.cmd --show photo.jpg` (list the
+2. **Double-click `Start-mat2-window.cmd`** to open a window. Drag files onto it (or
+   use "Add files..."), read the metadata found in each file, press "Clean files",
+   then compare with what is left in the cleaned copy. A cleaned copy is saved next
+   to each original (or in a folder you choose) as `NAME.cleaned.EXT`; an existing
+   file is never replaced and your originals are never changed.
+3. Without the window: **drag files onto `Clean-files-with-mat2.cmd`.** Same result,
+   no window.
+4. Command line: `mat2.cmd --help`, `mat2.cmd --show photo.jpg` (list the
    metadata without removing it).
 
 Notes from upstream: mat2 may slightly alter files to remove as much metadata as
